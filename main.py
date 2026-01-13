@@ -216,7 +216,7 @@ def get_current_dasha(dob_datetime):
 # --- HELPER: Generate Summary Report ---
 def generate_summary_report(lagna_data, planet_data, interpretations):
     # Find strongest and weakest planets
-    strengths = [(p['planet'], p['strength']) for p in interpretations]  # FIXED: 'name' → 'planet'
+   strengths = [(p['planet'], p['strength']) for p in interpretations]  # FIXED: 'name' → 'planet'
     strengths.sort(key=lambda x: x[1], reverse=True)
     
     strong_planets = strengths[:3]
