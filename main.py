@@ -18,7 +18,8 @@ app.add_middleware(
 
 # --- CONFIG ---
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-swe.set_ephe_path(BASE_DIR)
+EPHE_PATH = os.path.join(BASE_DIR, "ephemeris")  # FIXED: Added ephemeris folder
+swe.set_ephe_path(EPHE_PATH)  # FIXED: Correct path
 swe.set_sid_mode(swe.SIDM_LAHIRI)
 
 RASI_NAMES = ["Mesham", "Rishabam", "Mithunam", "Kadagam", "Simham", "Kanni", "Thulaam", "Vrischikam", "Dhanusu", "Makaram", "Kumbham", "Meenam"]
@@ -215,7 +216,7 @@ def get_current_dasha(dob_datetime):
 # --- HELPER: Generate Summary Report ---
 def generate_summary_report(lagna_data, planet_data, interpretations):
     # Find strongest and weakest planets
-    strengths = [(p['name'], p['strength']) for p in interpretations]
+    strengths = [(p['planet'], p['strength']) for p in interpretations]  # FIXED: 'name' → 'planet'
     strengths.sort(key=lambda x: x[1], reverse=True)
     
     strong_planets = strengths[:3]
@@ -350,40 +351,27 @@ def root():
         "version": "2.0",
         "endpoints": {
             "/calculate_report": "GET - Generate complete astrological report",
-            "/docs": "API documentation"
+            "/docs": "API documentation",
+            "/test-swisseph": "Test Swiss Ephemeris"
         },
         "tagline": "Your Ascendant, Your Destiny"
     }
 
-@app.get("/")
-def root():
-    return {
-        "message": "LagnaGuru Pro Astrology API",
-        "version": "2.0",
-        "endpoints": {
-            "/calculate_report": "GET - Generate complete astrological report",
-            "/docs": "API documentation"
-        },
-        "tagline": "Your Ascendant, Your Destiny"
-    }
-
-# ============ ADD TEST ENDPOINT HERE ============
 @app.get("/test-swisseph")
 def test_swisseph():
     import sys
-    import os
     import traceback
     
     result = {
+        "status": "testing",
         "python_version": sys.version,
-        "current_directory": os.getcwd(),
-        "files_in_current_dir": os.listdir("."),
-        "ephemeris_folder_exists": os.path.exists("ephemeris"),
+        "ephemeris_path": EPHE_PATH,
+        "ephemeris_folder_exists": os.path.exists(EPHE_PATH),
     }
     
     # Check ephemeris files
-    if os.path.exists("ephemeris"):
-        result["ephemeris_files"] = os.listdir("ephemeris")
+    if os.path.exists(EPHE_PATH):
+        result["ephemeris_files"] = os.listdir(EPHE_PATH)
     else:
         result["ephemeris_files"] = "FOLDER_NOT_FOUND"
     
@@ -398,7 +386,7 @@ def test_swisseph():
     
     # Test ephemeris path setting
     try:
-        swe.set_ephe_path("ephemeris")
+        swe.set_ephe_path(EPHE_PATH)
         result["ephemeris_path_set"] = "SUCCESS"
     except Exception as e:
         result["ephemeris_path_set"] = f"ERROR: {str(e)}"
@@ -413,7 +401,6 @@ def test_swisseph():
         result["calculation_test"] = f"ERROR: {str(e)}"
     
     return result
-# ============ END TEST ENDPOINT ============
 
 if __name__ == "__main__":
     import uvicorn
