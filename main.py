@@ -358,3 +358,41 @@ def root():
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
+@app.get("/test-swisseph")
+def test_swisseph():
+    import sys
+    import os
+    
+    result = {
+        "python_version": sys.version,
+        "current_directory": os.getcwd(),
+        "files_in_current_dir": os.listdir("."),
+        "ephemeris_folder_exists": os.path.exists("ephemeris"),
+        "ephemeris_files": os.listdir("ephemeris") if os.path.exists("ephemeris") else [],
+    }
+    
+    # Test if module loads
+    try:
+        import swisseph
+        result["swisseph_module"] = "LOADED_SUCCESSFULLY"
+        result["swisseph_version"] = swisseph.__version__ if hasattr(swisseph, '__version__') else "unknown"
+    except ImportError as e:
+        result["swisseph_module"] = f"IMPORT_ERROR: {str(e)}"
+    
+    # Test ephemeris path
+    try:
+        swe.set_ephe_path("ephemeris")
+        result["ephemeris_path_set"] = "SUCCESS"
+    except Exception as e:
+        result["ephemeris_path_set"] = f"ERROR: {str(e)}"
+    
+    # Test calculation
+    try:
+        jd = swe.julday(2024, 1, 1, 12.0)
+        sun = swe.calc_ut(jd, swe.SUN)
+        result["calculation_test"] = "SUCCESS"
+        result["sun_position"] = sun[0][0]
+    except Exception as e:
+        result["calculation_test"] = f"ERROR: {str(e)}"
+    
+    return result
