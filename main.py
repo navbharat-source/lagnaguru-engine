@@ -355,44 +355,66 @@ def root():
         "tagline": "Your Ascendant, Your Destiny"
     }
 
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+@app.get("/")
+def root():
+    return {
+        "message": "LagnaGuru Pro Astrology API",
+        "version": "2.0",
+        "endpoints": {
+            "/calculate_report": "GET - Generate complete astrological report",
+            "/docs": "API documentation"
+        },
+        "tagline": "Your Ascendant, Your Destiny"
+    }
+
+# ============ ADD TEST ENDPOINT HERE ============
 @app.get("/test-swisseph")
 def test_swisseph():
     import sys
     import os
+    import traceback
     
     result = {
         "python_version": sys.version,
         "current_directory": os.getcwd(),
         "files_in_current_dir": os.listdir("."),
         "ephemeris_folder_exists": os.path.exists("ephemeris"),
-        "ephemeris_files": os.listdir("ephemeris") if os.path.exists("ephemeris") else [],
     }
     
-    # Test if module loads
+    # Check ephemeris files
+    if os.path.exists("ephemeris"):
+        result["ephemeris_files"] = os.listdir("ephemeris")
+    else:
+        result["ephemeris_files"] = "FOLDER_NOT_FOUND"
+    
+    # Test if swisseph module loads
     try:
         import swisseph
         result["swisseph_module"] = "LOADED_SUCCESSFULLY"
-        result["swisseph_version"] = swisseph.__version__ if hasattr(swisseph, '__version__') else "unknown"
+        result["swisseph_version"] = getattr(swisseph, '__version__', 'unknown')
     except ImportError as e:
         result["swisseph_module"] = f"IMPORT_ERROR: {str(e)}"
+        result["traceback"] = traceback.format_exc()
     
-    # Test ephemeris path
+    # Test ephemeris path setting
     try:
         swe.set_ephe_path("ephemeris")
         result["ephemeris_path_set"] = "SUCCESS"
     except Exception as e:
         result["ephemeris_path_set"] = f"ERROR: {str(e)}"
     
-    # Test calculation
+    # Test basic calculation
     try:
         jd = swe.julday(2024, 1, 1, 12.0)
         sun = swe.calc_ut(jd, swe.SUN)
         result["calculation_test"] = "SUCCESS"
-        result["sun_position"] = sun[0][0]
+        result["sun_position_degrees"] = sun[0][0]
     except Exception as e:
         result["calculation_test"] = f"ERROR: {str(e)}"
     
     return result
+# ============ END TEST ENDPOINT ============
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)
